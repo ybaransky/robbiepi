@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+#
+# need to give the full path to the python sctript to start
+#
+#
+
+MAX_COUNT=10
+WAIT=60  # seconds between starting the process over
+
+function change_dir()
+{
+	echo "changing directory to $1"
+	cd $1
+	echo `pwd`
+}
+
+# create the logfile which catches stdout, stderr
+# its of the format... console-DATE-root.log
+date=`date +%Y-%m-%d-%H:%M:%S`
+dirname=$(dirname "$1")
+filename=$(basename "$1")
+rootname="${filename%.*}"
+consolefile=$dirname/"console-"$date"-"$rootname".log"
+
+echo "logging everything to consolefile: "$consolefile
+
+# change to the directory where the code is
+change_dir /home/pi/hardware
+
+COUNT=0 
+echo "starting in 30 seconds @ "$date >> $consolefile
+sleep 30   # we started the first time, wait till internet is working
+#until python /home/pi/hardware/iot.py 2>&1 >> $file; do
+until python $1 2>&1 >> $consolefile; do
+	if ((COUNT > MAX_COUNT)); then
+		echo " bye..."
+		exit 0
+	fi
+	echo "error $?, restartig in $WAIT seconds, count is $COUNT of $MAX_COUNT" >> $consolefile
+	sleep $WAIT 
+	((COUNT++))
+done
+echo "ending"
+#stdbuf -i0 -o0 -e0 ./pstart $* 2>&1 | tee $logfile
